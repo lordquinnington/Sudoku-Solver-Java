@@ -1,13 +1,17 @@
 public class Puzzle {
-    protected Constraint[] rows = new Constraint[9];            // creates 3 lots of constraints to represent rows, columns and squares
-    protected Constraint[] columns = new Constraint[9];
-    protected Constraint[] squares = new Constraint[9];
+    protected Constraint[][] constraints = new Constraint[3][9];
 
     public Puzzle() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                constraints[i][j] = new Constraint();       // initialises the grid with empty constraint objects
+            }
+        }
+
         for (int i = 0; i < 9; i++) {
-            rows[i] = new Constraint();         // all initialised to blank constraints
-            columns[i] = new Constraint();
-            squares[i] = new Constraint();
+            for (int j = 0; j < 9; j++) {
+                addCell(false, 0, i, j);        // adds a cell to each constraint using addCell method
+            }
         }
     }
 
@@ -16,9 +20,9 @@ public class Puzzle {
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                puzzle = puzzle.concat(rows[(3*i)+j].toString()+"\n");        // adds the constraint to the String (via the Constraint's toString method)
+                puzzle = puzzle.concat(constraints[0][(3*i)+j].toString()+"\n");        // adds the constraint to the String (via the Constraint's toString method)
             }
-            puzzle = puzzle.concat("\n-------------\n");
+            puzzle = puzzle.concat("\n-------------\n");        // inserts a line every 3 rows just as a normal sudoku grid would be
         }
 
         /* returns the puzzle in a form like this to help with debugging:
@@ -40,18 +44,28 @@ public class Puzzle {
     }
 
     // method to add a cell to the grid given a 2D array index
-    public void addCell(Cell pCell, int pColIndex, int pRowIndex) {
-        rows[pRowIndex].addCell(pCell, pColIndex);
-        columns[pColIndex].addCell(pCell, pRowIndex);
-
+    public void addCell(boolean pGiven, int pValue, int pColIndex, int pRowIndex) {
         int squareConstraintIndex = (pColIndex/3)+(3*(pRowIndex/3));        // works out which index for the correct square
         int squareCellIndex = (pColIndex-(3*(pColIndex/3)))+(3*(pRowIndex-(3*(pRowIndex/3))));
-        squares[squareConstraintIndex].addCell(pCell, squareCellIndex);
+        Cell cell = new Cell(pGiven, pValue, pRowIndex, pColIndex, squareConstraintIndex);      // cell is passed the correct indexes
+
+        constraints[0][pRowIndex].addCell(cell, pColIndex);     // the cell is added to each of the constraints
+        constraints[1][pColIndex].addCell(cell, pRowIndex);
+        constraints[2][squareConstraintIndex].addCell(cell, squareCellIndex);
+    }
+
+    public void updateCell(Cell pCell, int pColIndex, int pRowIndex) {
+        int squareConstraintIndex = (pColIndex/3)+(3*(pRowIndex/3));        // works out which index for the correct square
+        int squareCellIndex = (pColIndex-(3*(pColIndex/3)))+(3*(pRowIndex-(3*(pRowIndex/3))));
+
+        constraints[0][pRowIndex].addCell(pCell, pColIndex);     // the cell is added to each of the constraints
+        constraints[1][pColIndex].addCell(pCell, pRowIndex);
+        constraints[2][squareConstraintIndex].addCell(pCell, squareCellIndex);
     }
 
     // method to return constraints in the form [rows, columns, squares]
     public Constraint[][] getConstraints() {
-        return new Constraint[][]{rows, columns, squares};
+        return new Constraint[][]{constraints[0], constraints[1], constraints[2]};
     }
 
     // method to check if grid is full and valid. Returns boolean array in form [full, valid]
@@ -59,14 +73,14 @@ public class Puzzle {
         boolean full = true;
 
         for (int i = 0; i < 9; i++) {
-            if (rows[i].numOfCells() != 9 || columns[i].numOfCells() != 9 || squares[i].numOfCells() != 9) {
+            if (constraints[0][i].numOfCells() != 9 || constraints[1][i].numOfCells() != 9 || constraints[2][i].numOfCells() != 9) {
                 full = false;       // sets full to false if any one of the constraints doesn't have 9 filled in cells
                 break;      // breaks immediately for efficiency
             }
         }
         if (full) {
             for (int i = 0; i < 9; i++) {
-                if (rows[i].sumOfCells() != 45 || columns[i].sumOfCells() != 45 || squares[i].sumOfCells() != 45) {
+                if (constraints[0][i].sumOfCells() != 45 || constraints[1][i].sumOfCells() != 45 || constraints[2][i].sumOfCells() != 45) {
                     return new boolean[]{true, false};        // returns valid (index 1) as false if any one of the constraints does not sum to 45
                 }
             }

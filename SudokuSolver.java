@@ -1,9 +1,24 @@
 public class SudokuSolver {
     public static Puzzle solve(Puzzle pUnsolvedPuzzle) {
-        Puzzle unsolvedPuzzle = eliminateNotes(pUnsolvedPuzzle);
-        Puzzle solvedPuzzle = openSingles(unsolvedPuzzle);
-        // do more solving
-        return solvedPuzzle;
+        Puzzle puzzle = pUnsolvedPuzzle;
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (!(puzzle.getConstraints())[1][i].getCells()[j].isSolved()) {
+                    puzzle = eliminateNotes(puzzle, (puzzle.getConstraints())[1][i].getCells()[j], i, j);     // passes each cell to be solved
+                }
+            }
+        }
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (!(puzzle.getConstraints())[1][i].getCells()[j].isSolved()) {
+                    puzzle = openSingles(puzzle, (puzzle.getConstraints())[1][i].getCells()[j]);     // passes each cell to be solved
+                }
+            }
+        }
+
+        return puzzle;
     }
 
     /* #######################################################
@@ -28,20 +43,26 @@ public class SudokuSolver {
     ####################################################### */
 
     // method to check for open singles
-    protected static Puzzle openSingles(Puzzle pCurrentPuzzle) {
-        Constraint[][] constraints = pCurrentPuzzle.getConstraints();       // gets the current constraints
+    protected static Puzzle openSingles(Puzzle pCurrentPuzzle, Cell pCurrentCell) {
+        Constraint[][] constraints = pCurrentPuzzle.getConstraints();       // retrieves all constraints
+        int[] cellConstraints = pCurrentCell.getConstraints();      // retrieves the indexes of the cell's constraints
 
-        for (int i = 0; i < 3; i++) {       // loops through each row/column/square constraint array
-            for (int j = 0; j < 9; j++) {       // loops through each row/column/square
-                if (constraints[i][j].numOfCells() == 8) {
-                    Cell[] cells = constraints[i][j].getCells();        // retrieves the cells if there are eight
+        boolean changed = true;     // marks if any updates to the grid have been made (potentially meaning more solving can be done)
 
-                    for (int k = 0; k < 9; k++) {
-                        if (cells[k].getSolution() == 0) {      // finds the empty cell
-                            int[] index = indexToUpdate(i, j, k);       // calculates which 2D index the cell is at
-                            pCurrentPuzzle.addCell(new Cell(false, (45 - constraints[i][j].sumOfCells())), index[0], index[1]);
-                            constraints = pCurrentPuzzle.getConstraints();      // retrieves the updated constraints
-                            break;
+        while (changed) {
+            changed = false;
+
+            for (int i = 0; i < 3; i++) {
+                if (constraints[i][cellConstraints[i]].numOfCells() == 8) {
+                    Cell[] cells = constraints[i][cellConstraints[i]].getCells();       // gets cells if constraint has 8
+
+                    for (int j = 0; j < 9; j++) {
+                        if (cells[j].getSolution() == 0) {      // locates blank index
+                            int[] index = indexToUpdate(i, cellConstraints[i], j);      // works out index to add cell into grid
+                            pCurrentPuzzle.addCell(false, (45-constraints[i][cellConstraints[i]].sumOfCells()), index[0], index[1]);
+                            constraints = pCurrentPuzzle.getConstraints();      // gets updated constraints
+                            changed = true;     // a change has been made so change is marked back to true
+                            break;      // breaks immediately as there will be no more empty cells
                         }
                     }
                 }
@@ -56,23 +77,16 @@ public class SudokuSolver {
     ####################################################### */
 
     // method to find notes which can be eliminated
-    protected static Puzzle eliminateNotes(Puzzle pCurrentPuzzle) {
-        Constraint[][] constraints = pCurrentPuzzle.getConstraints();
+    public static Puzzle eliminateNotes(Puzzle pCurrentPuzzle, Cell pCurrentCell, int pCol, int pRow) {
+        Constraint[][] constraints = pCurrentPuzzle.getConstraints();       // retrieves all constraints
+        int[] cellConstraints = pCurrentCell.getConstraints();      // retrieves the indexes of the cell's constraints
 
         for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 9; j++) {
-                if (constraints[i][j].numOfCells() < 9) {
-                    int[] cellValues = constraints[i][j].getSolvedCells();      // retrieves all the solved cells for the constraint
-                    Cell[] cells = constraints[i][j].getCells();
+            int[] cellValues = constraints[i][cellConstraints[i]].getSolvedCells();     // gets array of solved values
+            pCurrentCell = removeNotesFromCell(pCurrentCell, cellValues);       // removes all solved values from cell's notes
 
-                    for (int k = 0; k < 9; k++) {
-                        if (!cells[k].isSolved()) {     // if the cell is not solved, the program will try remove notes
-                            Cell updatedCell = removeNotesFromCell(cells[k], cellValues);       // updates the cell and adds to grid
-                            pCurrentPuzzle.addCell(updatedCell, indexToUpdate(i, j, k)[0], indexToUpdate(i, j, k)[1]);
-                        }
-                    }
-                }
-            }
+            pCurrentPuzzle.updateCell(pCurrentCell, pCol, pRow);        // updates puzzle with the cell
+            constraints = pCurrentPuzzle.getConstraints();      // retrieves updated constraints
         }
 
         return pCurrentPuzzle;
@@ -80,14 +94,21 @@ public class SudokuSolver {
 
     // method to remove notes from a given cell
     protected static Cell removeNotesFromCell(Cell pCell, int[] pOtherCells) {
-        for (int i = 0; i < pOtherCells.length; i++) {      // don't need to check if value is in the cell's
-            pCell.removeNote(pOtherCells[i]);               // notes as it will just be ignored if not
+        for (int pOtherCell : pOtherCells) {      // don't need to check if value is in the cell's
+            pCell.removeNote(pOtherCell);               // notes as it will just be ignored if not
         }
 
-        if (pCell.getNotes().length == 1) {
-            pCell.setSolution(pCell.getNotes()[0]);     // sets cell value to note if only one note left
+        if (pCell.numOfNotes() == 1) {
+            pCell.setSolution(pCell.notesRemaining()[0]);     // sets cell value to note if only one note left
         }
 
         return pCell;
     }
+
+    /* #######################################################
+                          HIDDEN PAIRS
+    ####################################################### */
+
+    // method to check for hidden pairs
 }
+

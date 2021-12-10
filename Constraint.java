@@ -1,10 +1,8 @@
 public class Constraint {
-    protected Cell[] cells = new Cell[9];
+    protected Cell[] cells;
 
     public Constraint() {
-        for (int i = 0; i < 9; i++) {
-            cells[i] = new Cell(false, 0);      // all cells are initialised as blank -> 0
-        }
+        cells = new Cell[9];        // initialises a new Cell array of length nine
     }
 
     public String toString() {
@@ -58,7 +56,7 @@ public class Constraint {
         int[] cellValues = new int[numOfCells()];
         int cellValueIndex = 0;
 
-        for (int i = 0; i < numOfCells(); i++) {
+        for (int i = 0; i < 9; i++) {
             if (cells[i].isSolved()) {
                 cellValues[cellValueIndex] = cells[i].getSolution();        // if cell is solved, the value will be added
                 cellValueIndex++;
