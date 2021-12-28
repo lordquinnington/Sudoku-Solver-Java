@@ -1,5 +1,6 @@
 public class Puzzle {
     protected Constraint[][] constraints = new Constraint[3][9];
+    protected boolean valid = true;
 
     public Puzzle() {
         for (int i = 0; i < 3; i++) {
@@ -72,6 +73,10 @@ public class Puzzle {
     public boolean[] checkIfComplete() {
         boolean full = true;
 
+        if (!allConstraintsValid()) {
+            markAsInvalid();
+        }
+
         for (int i = 0; i < 9; i++) {
             if (constraints[0][i].numOfCells() != 9 || constraints[1][i].numOfCells() != 9 || constraints[2][i].numOfCells() != 9) {
                 full = false;       // sets full to false if any one of the constraints doesn't have 9 filled in cells
@@ -88,6 +93,99 @@ public class Puzzle {
         }
 
         return new boolean[]{false, false};      // if full is false then valid must also be false
+    }
+
+    // method to find the index with the least number of notes
+    public int[] indexWithLeastNotes() {
+        int numOfNotes = 10;        // starts off as 10 just in case all cells have 9 notes, then [0,0] will be returned
+        int[] index = new int[2];       // array to store the 2D index of the cell with the least notes as [col,row]
+
+        for (int i = 0; i < 9; i++) {       // loops through the grid
+            for (int j = 0; j < 9; j++) {
+                if (!constraints[1][i].getCells()[j].isSolved()) {      // checks if the cell is blank
+                    if (constraints[1][i].getCells()[j].numOfNotes() < numOfNotes) {        // checks if the cell has less notes
+                        numOfNotes = constraints[1][i].getCells()[j].numOfNotes();      // sets to new least value
+                        index = new int[]{i,j};     // marks the index of current least value
+                    }
+                }
+            }
+        }
+
+        return index;
+    }
+
+    // as Java passes objects by reference, this is needed to make a new Puzzle which is separate but the same in value
+    public Puzzle makeCopy() {
+        Puzzle p2 = new Puzzle();       // creates new separate instance of a Puzzle
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                int sol = constraints[1][i].getCells()[j].getSolution();        // retrieves the cell's solution
+                boolean given = !constraints[1][i].getCells()[j].isEditable();      // retrieves if the cell was given
+                int[] notes = constraints[1][i].getCells()[j].getNotes();       // retrieves the notes
+                int[] newCellNotes = new int[notes.length];
+                System.arraycopy(notes, 0, newCellNotes, 0, notes.length);
+                int squareConstraintIndex = (i/3)+(3*(j/3));        // works out which index for the correct square
+
+                Cell c = new Cell(given,sol,j,i,squareConstraintIndex);     // creates a new cell to add
+                c.setNotes(newCellNotes);      // sets the notes to match the original cell
+                p2.updateCell(c,i,j);       // updates the second puzzle
+            }
+        }
+
+        return p2;
+    }
+
+    // method to set if the grid is valid or not
+    public void markAsInvalid() {
+        valid = false;
+    }
+
+    // method to get if the grid is valid or not
+    public boolean isValid() {
+        return valid;
+    }
+
+    // method to check if the grid is the same as another grid
+    public boolean isEqual(Puzzle pOtherPuzzle) {
+        Constraint[][] otherConstraints = pOtherPuzzle.getConstraints();        // gets the constraints from the other puzzle
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (otherConstraints[1][i].getCells()[j].getSolution() != constraints[1][i].getCells()[j].getSolution()) {
+                    return false;       // returns false if the solutions do not match
+                }
+                if (!notesEqual(otherConstraints[1][i].getCells()[j].getNotes(),constraints[1][i].getCells()[j].getNotes())) {
+                    return false;       // returns false if the notes do not match
+                }
+            }
+        }
+
+        return true;        // returns true if both notes and solutions match
+    }
+
+    // method to check if two int arrays are equal (for checking notes)
+    protected boolean notesEqual(int[] pOtherNotes, int[] notes) {
+        for (int i = 0; i < 9; i++) {
+            if (pOtherNotes[i] != notes[i]) {
+                return false;       // returns false if any of the notes do not match
+            }
+        }
+
+        return true;        // returns true if all of the notes match
+    }
+
+    // method to check if all constraints are valid (ie don't contain any duplicates)
+    public boolean allConstraintsValid() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {       // loops through all the constraints
+                if (constraints[i][j].containsDuplicates()) {
+                    return false;       // returns false immediately if any constraints contain duplicates
+                }
+            }
+        }
+
+        return true;
     }
 }
 

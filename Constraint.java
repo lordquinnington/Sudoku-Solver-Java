@@ -65,5 +65,40 @@ public class Constraint {
 
         return cellValues;
     }
+
+    // method to get the notes from all the cells
+    public int[][] getAllNotes() {
+        int[][] allNotes = new int[9][];        // the index of the notes in the array can be used to keep track of which cell they came from
+
+        for (int i = 0; i < 9; i++) {
+            if (cells[i].isSolved()) {
+                allNotes[i] = new int[]{0};     // if the cell is solved, a 0 is added as it effectively has no notes
+            }
+            else {
+                allNotes[i] = cells[i].notesRemaining();      // if cell is blank, it's notes array is added
+            }
+        }
+
+        return allNotes;
+    }
+
+    // method to check if the constraint contains duplicate numbers
+    public boolean containsDuplicates() {
+        int[] numsInConstraint = new int[0];        // array to store all appearing numbers
+
+        for (int i = 0; i < 9; i++) {
+            if (cells[i].getSolution() != 0) {      // no point adding 0 to the array
+                if (SudokuSolver.inArr(numsInConstraint,cells[i].getSolution())) {
+                    return true;        // if number already appears in the array than it must be a duplicate and therefore invalid
+                }
+                else {
+                    // adds the number to array if not already in
+                    numsInConstraint = SudokuSolver.append(numsInConstraint, cells[i].getSolution());
+                }
+            }
+        }
+
+        return false;
+    }
 }
 

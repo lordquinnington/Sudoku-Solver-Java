@@ -30,25 +30,9 @@ public class Cell {
     }
 
     // method to set the solution of the cell
-    public boolean setSolution(int pSolution) {
-        boolean found = false;
-
-        for (int i = 0; i < 9; i++) {
-            if (notes[i] == pSolution) {        // uses a linear search to check if the value is in notes
-                found = true;       // marks found as true if present
-                break;
-            }
-        }
-
-        // sets the solution if the suggested solution is a valid option
-        if (found) {
-            solution = pSolution;
-            solved = true;
-            return true;
-        }
-        else {
-            return false;
-        }
+    public void setSolution(int pSolution) {
+        solution = pSolution;
+        solved = true;
     }
 
     // method to return the solution to the square
@@ -112,6 +96,11 @@ public class Cell {
         }
 
         return notesLeft;
+    }
+
+    // method to manually set the cell's notes
+    public void setNotes(int[] pNotes) {
+        notes = pNotes;
     }
 }
 
